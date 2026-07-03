@@ -2,7 +2,10 @@
 set -euo pipefail
 
 TS="$(date +%Y%m%d_%H%M%S)"
-LOG_DIR="./repro_logs/v100_sxm2_env_check/${TS}"
+BASE_LOG_DIR="./repro_logs/v100_sxm2_env_check"
+LOG_DIR="${BASE_LOG_DIR}/${TS}"
+LATEST_LINK="${BASE_LOG_DIR}/latest"
+
 mkdir -p "${LOG_DIR}"
 
 echo "[INFO] Log directory: ${LOG_DIR}"
@@ -58,5 +61,73 @@ else
   echo "[WARN] ncu not found" | tee "${LOG_DIR}/ncu_version.txt"
 fi
 
+echo "[INFO] Creating latest symlink"
+ln -sfn "${TS}" "${LATEST_LINK}"
+
+SUMMARY="${LOG_DIR}/summary.txt"
+
+{
+  echo "=== V100 SXM2 Environment Check Summary ==="
+  echo "Timestamp: ${TS}"
+  echo "Log directory: ${LOG_DIR}"
+  echo "Latest link: ${LATEST_LINK}"
+  echo
+
+  echo "[Host]"
+  if [ -f "${LOG_DIR}/host_info.txt" ]; then
+    sed -n '1,20p' "${LOG_DIR}/host_info.txt"
+  else
+    echo "host_info.txt not available"
+  fi
+  echo
+
+  echo "[Git]"
+  if [ -f "${LOG_DIR}/git_info.txt" ]; then
+    sed -n '1,40p' "${LOG_DIR}/git_info.txt"
+  else
+    echo "git_info.txt not available"
+  fi
+  echo
+
+  echo "[GPU]"
+  if [ -f "${LOG_DIR}/nvidia_smi_L.txt" ]; then
+    cat "${LOG_DIR}/nvidia_smi_L.txt"
+  else
+    echo "nvidia-smi -L output not available"
+  fi
+  echo
+
+  echo "[GPU Query]"
+  if [ -f "${LOG_DIR}/nvidia_smi_query.csv" ]; then
+    cat "${LOG_DIR}/nvidia_smi_query.csv"
+  else
+    echo "nvidia-smi query output not available"
+  fi
+  echo
+
+  echo "[CUDA]"
+  if [ -f "${LOG_DIR}/nvcc_version.txt" ]; then
+    cat "${LOG_DIR}/nvcc_version.txt"
+  else
+    echo "nvcc output not available"
+  fi
+  echo
+
+  echo "[Nsight Compute]"
+  if [ -f "${LOG_DIR}/ncu_version.txt" ]; then
+    cat "${LOG_DIR}/ncu_version.txt"
+  else
+    echo "ncu output not available"
+  fi
+} | tee "${SUMMARY}"
+
+echo
 echo "[INFO] Done."
-echo "[INFO] Check whether GPU name is Tesla V100-SXM2-32GB and memory is around 32768 MiB."
+echo "[INFO] Summary file:"
+echo "  ${SUMMARY}"
+echo
+echo "[INFO] To share the key result, run:"
+echo "  cat repro_logs/v100_sxm2_env_check/latest/summary.txt"
+echo
+echo "[INFO] To list all generated files, run:"
+echo "  find repro_logs/v100_sxm2_env_check/latest -type f | sort"
