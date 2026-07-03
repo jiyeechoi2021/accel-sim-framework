@@ -16,3 +16,11 @@ compile_commands.json
 .cache
 .cursorrules
 CLAUDE.md
+# Local reproduction logs
+repro_logs/
+
+# SSH/private keys
+*.pem
+*.key
+id_rsa
+id_ed25519
